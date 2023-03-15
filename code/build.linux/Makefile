@@ -200,8 +200,9 @@ DEFINES =  -DFILESYS_STUB -DRDATA -DSIM_FIX
 # break the thread system.  You might want to use -fno-inline if
 # you need to call some inline functions from the debugger.
 
-CFLAGS = -g -Wall -fwritable-strings $(INCPATH) $(DEFINES) $(HOSTCFLAGS) -DCHANGED
-LDFLAGS =
+CFLAGS = -g -Wall $(INCPATH) $(DEFINES) $(HOSTCFLAGS) -DCHANGED -m32
+LDFLAGS = -m32
+CPP_AS_FLAGS= -m32
 
 #####################################################################
 CPP=/lib/cpp
@@ -210,7 +211,7 @@ LD = g++
 AS = as
 RM = /bin/rm
 
-INCPATH = -I../network -I../filesys -I../userprog -I../threads -I../machine -I../lib
+INCPATH = -I../network -I../filesys -I../userprog -I../threads -I../machine -I../lib -I-
 
 PROGRAM = nachos
 
@@ -269,7 +270,11 @@ THREAD_H = ../threads/alarm.h\
 	../threads/switch.h\
 	../threads/synch.h\
 	../threads/synchlist.h\
-	../threads/thread.h
+	../threads/thread.h\
+	../threads/ptable.h\
+	../threads/pcb.h\
+	../threads/stable.h\
+	../threads/sem.h\
 
 THREAD_C = ../threads/alarm.cc\
 	../threads/kernel.cc\
@@ -277,9 +282,13 @@ THREAD_C = ../threads/alarm.cc\
 	../threads/scheduler.cc\
 	../threads/synch.cc\
 	../threads/synchlist.cc\
-	../threads/thread.cc
+	../threads/thread.cc\
+	../threads/ptable.cc\
+	../threads/pcb.cc\
+	../threads/stable.cc\
+	../threads/sem.cc\
 
-THREAD_O = alarm.o kernel.o main.o scheduler.o synch.o thread.o
+THREAD_O = alarm.o kernel.o main.o scheduler.o synch.o thread.o ptable.o pcb.o stable.o sem.o
 
 USERPROG_H = ../userprog/addrspace.h\
 	../userprog/syscall.h\
@@ -336,13 +345,12 @@ $(PROGRAM): $(OFILES)
 $(C_OFILES): %.o:
 	$(CC) $(CFLAGS) -c $<
 
-switch.o: ../threads/switch.s
-	$(CPP) $(CPP_AS_FLAGS) -P $(INCPATH) $(HOSTCFLAGS) ../threads/switch.s > swtch.s
-	$(AS) -o switch.o swtch.s
+switch.o: ../threads/switch.S
+	$(CC) $(CPP_AS_FLAGS) -P $(INCPATH) $(HOSTCFLAGS) -c ../threads/switch.S
 
 depend: $(CFILES) $(HFILES)
 	$(CC) $(INCPATH) $(DEFINES) $(HOSTCFLAGS) -DCHANGED -M $(CFILES) > makedep
-	@echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	@echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	@echo '$$r makedep' >>eddep
 	@echo 'w' >>eddep
 	@echo 'q' >>eddep
@@ -354,12 +362,19 @@ depend: $(CFILES) $(HFILES)
 
 clean:
 	$(RM) -f $(OFILES)
-	$(RM) -f swtch.s
 
 distclean: clean
 	$(RM) -f $(PROGRAM)
 	$(RM) -f DISK_?
 	$(RM) -f core
 	$(RM) -f SOCKET_?
+	@echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	@echo 'w' >>eddep
+	@echo 'q' >>eddep
+	ed - Makefile.dep < eddep
+	rm eddep 
+	@echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile.dep
+	@echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile.dep
+	@echo '# see make depend above' >> Makefile.dep
 
 include Makefile.dep

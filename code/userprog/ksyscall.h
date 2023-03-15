@@ -109,7 +109,9 @@ void SysPrintNum(int num) {
         kernel->synchConsoleOut->PutChar(_numberBuffer[i] + '0');
 }
 
-char SysReadChar() { return kernel->synchConsoleIn->GetChar(); }
+char SysReadChar() { 
+    return kernel->synchConsoleIn->GetChar(); 
+}
 
 void SysPrintChar(char character) {
     kernel->synchConsoleOut->PutChar(character);
@@ -180,6 +182,31 @@ int SysWrite(char* buffer, int charCount, int fileId) {
         return kernel->synchConsoleOut->PutString(buffer, charCount);
     }
     return kernel->fileSystem->Write(buffer, charCount, fileId);
+}
+
+int SysRemove(char *fileName) {
+    bool success;
+    int fileNameLength = strlen(fileName);
+
+    if (fileNameLength == 0) {
+        DEBUG(dbgSys, "\nFile name cannot be empty");
+        success = false;
+
+    } else if (fileName == NULL) {
+        DEBUG(dbgSys, "\nNot enough memory in system");
+        success = false;
+
+    } else {
+        DEBUG(dbgSys, "\nFile name is valid");
+        if (!kernel->fileSystem->Remove(fileName)) {
+            DEBUG(dbgSys, "\nCannot remove file");
+            success = false;
+        } else {
+            success = true;
+        }
+    }
+
+    return success;
 }
 
 int SysSeek(int seekPos, int fileId) {

@@ -271,6 +271,19 @@ void handle_SC_Write() {
     return move_program_counter();
 }
 
+void handle_SC_Remove() {
+    int virtAdrr = kernel->machine->ReadRegister(4);
+    char* fileName = stringUser2System(virtAdrr);
+    
+    if (SysRemove(fileName))
+        kernel->machine->WriteRegister(2, 0);
+    else
+        kernel->machine->WriteRegister(2, -1);
+
+    delete fileName;
+    return move_program_counter();    
+}
+
 /**
  * Handle SC_Seek
  * This method will seek the file to the given position.
@@ -470,6 +483,7 @@ void ExceptionHandler(ExceptionType which) {
                  */
                 case SC_Create:
                 case SC_Remove:
+                    return handle_SC_Remove();
                 case SC_ThreadFork:
                 case SC_ThreadYield:
                 case SC_ExecV:
